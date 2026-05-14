@@ -249,48 +249,7 @@ def train_bpe(
         vocab[new_id] = pair[0] + pair[1]
         
     return vocab, merges
-
-
-# def bytes_to_unicode():
-#     """
-#     创建一个映射，将 0-255 字节映射为一组可见的 Unicode 字符。
-#     这是 GPT-2 源码中的标准做法。
-#     """
-#     bs = list(range(ord("!"), ord("~") + 1)) + list(range(ord("¡"), ord("¬") + 1)) + list(range(ord("®"), ord("ÿ") + 1))
-#     cs = bs[:]
-#     n = 0
-#     for b in range(256):
-#         if b not in bs:
-#             bs.append(b)
-#             cs.append(256 + n)
-#             n += 1
-#     cs = [chr(n) for n in cs]
-#     return dict(zip(bs, cs))
-
-
-# def save_tokenizer_files(vocab, merges, out_dir):
-#     os.makedirs(out_dir, exist_ok=True)
-
-#     # 初始化映射表
-#     byte_encoder = bytes_to_unicode()
-
-#     # 词表保存
-#     # 使用 byte_encoder 将 bytes 转换为可见字符串
-#     json_vocab = {
-#         k: "".join(byte_encoder[b] for b in v) 
-#         for k, v in vocab.items()
-#     }
-#     with open(os.path.join(out_dir, "vocab.json"), "w", encoding="utf-8") as f:
-#         json.dump(json_vocab, f, indent=4)
     
-#     # 合并规则保存
-#     with open(os.path.join(out_dir, "merges.txt"), "w", encoding="utf-8") as f:
-#         for p1, p2 in merges:
-#             # 同样转换 p1 和 p2
-#             s1 = "".join(byte_encoder[b] for b in p1)
-#             s2 = "".join(byte_encoder[b] for b in p2)
-#             f.write(f"{s1} {s2}\n")
-
 
 def save_vocab(vocab, output_path):
     os.makedirs(output_path, exist_ok=True)

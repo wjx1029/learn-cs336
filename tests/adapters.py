@@ -10,9 +10,13 @@ from jaxtyping import Bool, Float, Int
 from torch import Tensor
 
 from cs336_basics.train_bpe import train_bpe
-
 from cs336_basics.tokenizer import BPETokenizer
-
+from cs336_basics.linear import Linear
+from cs336_basics.embedding import Embedding
+from cs336_basics.prenorm_transformer_block import (
+    RMSNorm,
+    SwiGluFFN,
+)
 
 def run_linear(
     d_in: int,
@@ -33,7 +37,14 @@ def run_linear(
         Float[Tensor, "... d_out"]: The transformed output of your linear module.
     """
 
-    raise NotImplementedError
+    # raise NotImplementedError
+    custom_linear = Linear(d_in, d_out)
+
+    with torch.no_grad():
+        custom_linear.W.data.copy_(weights)
+
+    return custom_linear(in_features)
+
 
 
 def run_embedding(
@@ -55,7 +66,13 @@ def run_embedding(
         Float[Tensor, "... d_model"]: Batch of embeddings returned by your Embedding layer.
     """
 
-    raise NotImplementedError
+    # raise NotImplementedError
+    embedding = Embedding(vocab_size, d_model)
+
+    with torch.no_grad():
+        embedding.embed_mat.data.copy_(weights)
+
+    return embedding(token_ids)
 
 
 def run_swiglu(
@@ -87,8 +104,12 @@ def run_swiglu(
     # swiglu.w1.weight.data = w1_weight
     # swiglu.w2.weight.data = w2_weight
     # swiglu.w3.weight.data = w3_weight
-    raise NotImplementedError
-
+    # raise NotImplementedError
+    swiglu = SwiGluFFN(d_model, d_ff)
+    swiglu.linear1.W.data = w1_weight
+    swiglu.linear2.W.data = w2_weight
+    swiglu.linear3.W.data = w3_weight
+    return swiglu(in_features)
 
 def run_scaled_dot_product_attention(
     Q: Float[Tensor, " ... queries d_k"],
@@ -382,7 +403,13 @@ def run_rmsnorm(
         Float[Tensor,"... d_model"]: Tensor of with the same shape as `in_features` with the output of running
         RMSNorm of the `in_features`.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    rms_norm = RMSNorm(d_model, eps)
+
+    with torch.no_grad():
+        rms_norm.G.data.copy_(weights)
+    
+    return rms_norm(in_features)
 
 
 def run_silu(in_features: Float[Tensor, " ..."]) -> Float[Tensor, " ..."]:

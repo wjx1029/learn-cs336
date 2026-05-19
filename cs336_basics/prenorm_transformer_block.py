@@ -1,6 +1,9 @@
 from torch import nn
 import torch
+import math
+
 from .linear import Linear
+from .softmax import softmax
 
 class RMSNorm(nn.Module):
     def __init__(self, d_model: int, eps: float = 1e-5, device=None, dtype=None):
@@ -26,7 +29,6 @@ class RMSNorm(nn.Module):
         result = rms_x * x * self.G
 
         return result.to(in_dtype)
-
 
 
 class SwiGluFFN(nn.Module):
@@ -56,11 +58,10 @@ class SwiGluFFN(nn.Module):
 
         x2 = self.linear3(x)
 
-        x = x1 * x2
 
-        x = self.linear2(x)
+        result = self.linear2(x1 * x2)
 
-        return x
+        return result
 
 
 class RotaryPositionalEmbedding(nn.Module):
@@ -78,17 +79,99 @@ class RotaryPositionalEmbedding(nn.Module):
         self.d_k = d_k
         self.max_seq_len = max_seq_len
 
-        k = torch.arrange(d_k // 2, device)
+        # shape: (d_k // 2,)
+        k = torch.arange(0, d_k // 2, device=device)
         freqs = theta ** (-2 * k / d_k)
 
          # Shape: (max_seq_len,)
-        i = torch.arrange(max_seq_len, device)
+        i = torch.arange(0, max_seq_len, device=device)
 
         # Shape: (max_seq_len, d_k // 2)
-        angles = torch.einsum("i,k -> i k", i, freqs)
+        angles = torch.einsum("i,k->ik", i, freqs) 
 
-        self.register_buffer("cos", torch.cos(angles), persistent=False)
-        self.register_buffer("sin", torch.sin(angles), persistent=False)
+        # For each pair, we need to duplicate the angle
+        # We'll create cos and sin of shape (max_seq_len, d_k)
+        cos_full = torch.zeros(max_seq_len, d_k, device=device)
+        sin_full = torch.zeros(max_seq_len, d_k, device=device)
+        
+        # Fill alternating dimensions with the same angle
+        cos_full[:, 0::2] = torch.cos(angles)
+        cos_full[:, 1::2] = torch.cos(angles)
+        sin_full[:, 0::2] = torch.sin(angles)
+        sin_full[:, 1::2] = torch.sin(angles)
+        
+        self.register_buffer('cos', cos_full, persistent=False)
+        self.register_buffer('sin', sin_full, persistent=False)
 
     def forward(self, x: torch.Tensor, token_positions: torch.Tensor) -> torch.Tensor:
+        """
+        Apply rotary position embeddings.
         
+        Args:
+            x: Input tensor of shape (..., seq_len, d_k)
+            token_positions: Token positions of shape (..., seq_len)
+            
+        Returns:
+            Tensor with applied rotations
+        """
+        
+        # cos_vals, sin_vals shape: (..., seq_len, d_k)
+        cos_vals = self.cos[token_positions]
+        sin_vals = self.sin[token_positions]
+
+        rotate_x = self._rotate_half(x)
+
+        result = x * cos_vals + rotate_x * sin_vals
+
+        return result
+
+    
+    def _rotate_half(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        x.shape :           (..., seq_len, d_k)
+        rotate_x.shape:     (..., seq_len, d_k)
+        For each pair (x0, x1) -> (-x1, x0)
+        """
+
+        rotated = torch.empty_like(x)
+
+        rotated[...,0::2] = -x[...,1::2]
+        rotated[...,1::2] = x[...,0::2]
+
+        return rotated
+
+
+def scaled_dot_product_attention(Q: torch.Tensor,
+                                 K: torch.Tensor,
+                                 V: torch.Tensor,
+                                 mask: torch.tensor=None) -> torch.Tensor:
+    """
+    Given key (K), query (Q), and value (V) tensors, return
+    the output of your scaled dot product attention implementation.
+
+    Args:
+        Q (Float[Tensor, " ... queries d_k"]): Query tensor
+        K (Float[Tensor, " ... keys d_k"]): Key tensor
+        V (Float[Tensor, " ... keys d_v"]): Values tensor
+        mask (Bool[Tensor, " ... queries keys"] | None): Mask tensor
+    Returns:
+        Float[Tensor, " ... queries d_v"]: Output of SDPA
+    """
+
+    d_k = Q.shape[-1]
+    
+    scores = torch.einsum("...qd,...kd->...qk", Q, K)
+
+    scores = scores / math.sqrt(d_k)
+
+    if mask is not None:
+        # tensor.masked_fill(mask, value)
+        # mask: bool 张量，True 的位置会被填充
+        # value: 填充的值
+        scores = scores.masked_fill(~mask, float("-inf"))
+
+    scores = softmax(scores, -1)
+
+    attention = torch.einsum("...qk,...kd->...qd", scores, V)
+
+    return attention

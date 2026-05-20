@@ -1,6 +1,7 @@
 from torch import nn
 import torch
 import math
+import einops
 
 from .linear import Linear
 from .softmax import softmax
@@ -175,3 +176,90 @@ def scaled_dot_product_attention(Q: torch.Tensor,
     attention = torch.einsum("...qk,...kd->...qd", scores, V)
 
     return attention
+
+
+class MultiHeadSelfAttention(nn.Module):
+
+    def __init__(self, d_model:int, num_heads:int, rope_embedding: RotaryPositionalEmbedding=None):
+
+        super().__init__()
+
+        assert d_model % num_heads == 0, "d_model must be divisible by num_heads"
+
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.d_head = d_model // num_heads
+        self.rope_embedding = rope_embedding
+
+        self.Wqkv = Linear(d_model, d_model * 3)
+        self.Wo = Linear(d_model, d_model)
+
+    def forward(self,in_features: torch.Tensor, positions: torch.Tensor=None) -> torch.Tensor:
+
+        seq_len = in_features.shape[-2]
+        
+        # project in_features to new linear space
+        QKV = self.Wqkv(in_features)    # (bs, seq_len, d_model) -> (bs, seq_len, d_model * 3)
+        
+        # # split to Q, K, V
+        # QKV = einops.rearrange(QKV, '... (n d) -> n ... d', n=3)
+        # Q_proj, K_proj, V_proj = QKV.unbind(dim=0)
+
+        # # split [num_heads] heads (bs, seq_len, d_model) -> (bs, num_heads, seq_len, d_heads)
+        # Q_proj = einops.rearrange(Q_proj, '... l (h d) -> ... h l d', h=self.num_heads)
+        # K_proj = einops.rearrange(K_proj, '... l (h d) -> ... h l d', h=self.num_heads)
+        # V_proj = einops.rearrange(V_proj, '... l (h d) -> ... h l d', h=self.num_heads)
+
+        # split QKV_proj to Q, K, V and split [h] heads
+        QKV = einops.rearrange(
+            QKV,
+            "... l (three h d) -> three ... h l d",
+            three=3,
+            h=self.num_heads,
+            d=self.d_head
+        )
+
+        Q_proj, K_proj, V_proj = QKV.unbind(dim=0)
+
+        # rotary position embedding
+        if self.rope_embedding is not None and positions is not None: 
+            Q_proj = self.rope_embedding(Q_proj, positions)
+            K_proj = self.rope_embedding(K_proj, positions)
+
+        # create causal mask
+        causal_mask = torch.tril(torch.ones(seq_len, seq_len, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)  # expand to 4 dim
+
+        # get attention_outputs (bs, num_heads, seq_len, d_heads)
+        attention_outputs = scaled_dot_product_attention(Q_proj, K_proj, V_proj, mask=causal_mask)
+        # (bs, num_heads, seq_len, d_heads) -> (bs, seq_len, d_model)
+        attention_outputs = einops.rearrange(attention_outputs, '... h l d -> ... l (h d)')
+
+        return self.Wo(attention_outputs)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

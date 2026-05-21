@@ -332,7 +332,7 @@ def run_transformer_block(
     
     rope_embedding = RotaryPositionalEmbedding(theta, d_model // num_heads, max_seq_len)
 
-    transformer_block = TransformerBlock(d_model, num_heads, d_ff, rope_embedding)
+    transformer_block = TransformerBlock(d_model, num_heads, d_ff=d_ff, rope_embedding=rope_embedding)
 
     qkv_proj_weight = torch.cat([weights['attn.q_proj.weight'], weights['attn.k_proj.weight'], weights['attn.v_proj.weight']], dim=0)
     with torch.no_grad():

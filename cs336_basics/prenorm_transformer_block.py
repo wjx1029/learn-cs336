@@ -26,7 +26,7 @@ class RMSNorm(nn.Module):
         in_dtype = x.dtype
         x = x.to(torch.float32)
 
-        rms_x = torch.rsqrt(torch.mean(x * x, dim = -1, keepdim=True) + self.eps)
+        rms_x = torch.rsqrt(torch.mean(torch.square(x), dim = -1, keepdim=True) + self.eps)
         result = rms_x * x * self.G
 
         return result.to(in_dtype)
@@ -239,7 +239,7 @@ class MultiHeadSelfAttention(nn.Module):
 
 class TransformerBlock(nn.Module):
 
-    def __init__(self, d_model:int, num_heads: int, d_ff: int = None, rope_embedding: RotaryPositionalEmbedding=None):
+    def __init__(self, d_model:int, num_heads: int, d_ff: int=None, eps: float=1e-5, rope_embedding: RotaryPositionalEmbedding=None):
 
         super().__init__()
 
@@ -252,18 +252,21 @@ class TransformerBlock(nn.Module):
 
         self.swiglu_layer = SwiGluFFN(d_model, d_ff)
 
-        self.rms_norm1 = RMSNorm(d_model)
+        self.rms_norm1 = RMSNorm(d_model, eps)
 
-        self.rms_norm2 = RMSNorm(d_model)
+        self.rms_norm2 = RMSNorm(d_model, eps)
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: torch.Tensor, tokens_position: torch.Tensor=None):
 
         # pre norm
         x_normed = self.rms_norm1(x)
         
         # get multi head attention
         if self.rope_embedding is not None:
-            attention_outputs = self.mha_layer(x_normed, torch.arange(x.shape[-2], device=x.device))
+            if tokens_position is not None:
+                attention_outputs = self.mha_layer(x_normed, tokens_position)
+            else:    
+                attention_outputs = self.mha_layer(x_normed, torch.arange(x.shape[-2], device=x.device))
         else:
             attention_outputs = self.mha_layer(x_normed)
         
@@ -281,6 +284,24 @@ class TransformerBlock(nn.Module):
 
         return activate_outputs
 
+
+class TransformerModel(nn.Module):
+
+    def __init__(self, vocab_size: int,
+                       context_length: int,
+                       num_layers: int,
+                       d_model: int,
+                       num_heads: int,
+                       d_ff: int,
+                       rope_theta: float,
+                       rms_eps: float,
+                       ):
+        super().__init__()
+
+        self.vocab_size = vocab_size
+        self.context_length = context_length
+        self.d_model = d_model
+        self.num_heads = self.num_heads
 
 
 

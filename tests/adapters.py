@@ -20,6 +20,7 @@ from cs336_basics.prenorm_transformer_block import (
     RotaryPositionalEmbedding,
     scaled_dot_product_attention,
     MultiHeadSelfAttention,
+    TransformerBlock,
 )
 
 def run_linear(
@@ -327,7 +328,23 @@ def run_transformer_block(
         Float[Tensor, "batch sequence_length d_model"] Tensor with the output of
         running the Transformer block on the input features while using RoPE.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    
+    rope_embedding = RotaryPositionalEmbedding(theta, d_model // num_heads, max_seq_len)
+
+    transformer_block = TransformerBlock(d_model, num_heads, d_ff, rope_embedding)
+
+    qkv_proj_weight = torch.cat([weights['attn.q_proj.weight'], weights['attn.k_proj.weight'], weights['attn.v_proj.weight']], dim=0)
+    with torch.no_grad():
+        transformer_block.mha_layer.Wqkv.W.copy_(qkv_proj_weight)
+        transformer_block.mha_layer.Wo.W.copy_(weights['attn.output_proj.weight'])
+        transformer_block.rms_norm1.G.copy_(weights['ln1.weight'])
+        transformer_block.rms_norm2.G.copy_(weights['ln2.weight'])
+        transformer_block.swiglu_layer.linear1.W.copy_(weights['ffn.w1.weight'])
+        transformer_block.swiglu_layer.linear2.W.copy_(weights['ffn.w2.weight'])
+        transformer_block.swiglu_layer.linear3.W.copy_(weights['ffn.w3.weight'])
+
+    return transformer_block(in_features)
 
 
 def run_transformer_lm(

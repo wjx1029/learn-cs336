@@ -237,15 +237,49 @@ class MultiHeadSelfAttention(nn.Module):
         return self.Wo(attention_outputs)
 
 
+class TransformerBlock(nn.Module):
 
+    def __init__(self, d_model:int, num_heads: int, d_ff: int = None, rope_embedding: RotaryPositionalEmbedding=None):
 
+        super().__init__()
 
+        self.d_model = d_model
+        self.num_heads = num_heads
 
+        self.rope_embedding = rope_embedding
 
+        self.mha_layer = MultiHeadSelfAttention(d_model, num_heads, rope_embedding)
 
+        self.swiglu_layer = SwiGluFFN(d_model, d_ff)
 
+        self.rms_norm1 = RMSNorm(d_model)
 
+        self.rms_norm2 = RMSNorm(d_model)
 
+    def forward(self, x: torch.Tensor):
+
+        # pre norm
+        x_normed = self.rms_norm1(x)
+        
+        # get multi head attention
+        if self.rope_embedding is not None:
+            attention_outputs = self.mha_layer(x_normed, torch.arange(x.shape[-2], device=x.device))
+        else:
+            attention_outputs = self.mha_layer(x_normed)
+        
+        # 残差链接
+        mha_outputs = x + attention_outputs   
+
+        # pre norm
+        mha_outputs_normed = self.rms_norm2(mha_outputs)
+        
+        # SwiGlu activate
+        activate_outputs = self.swiglu_layer(mha_outputs_normed)
+        
+        # 残差链接
+        activate_outputs = activate_outputs + mha_outputs
+
+        return activate_outputs
 
 
 

@@ -5,6 +5,7 @@ import einops
 
 from .linear import Linear
 from .softmax import softmax
+from .embedding import Embedding
 
 class RMSNorm(nn.Module):
     def __init__(self, d_model: int, eps: float = 1e-5, device=None, dtype=None):
@@ -294,17 +295,51 @@ class TransformerModel(nn.Module):
                        num_heads: int,
                        d_ff: int,
                        rope_theta: float,
-                       rms_eps: float,
+                       rms_eps: float=1e-5,
                        ):
         super().__init__()
 
-        self.vocab_size = vocab_size
-        self.context_length = context_length
-        self.d_model = d_model
-        self.num_heads = self.num_heads
+        # self.vocab_size = vocab_size
+        # self.context_length = context_length
+        # self.d_model = d_model
+        # self.num_heads = num_heads
+        self.num_layers = num_layers
 
+        self.embedding = Embedding(num_embeddings=vocab_size, embedding_dim=d_model)
 
+        self.rope_embedding = RotaryPositionalEmbedding(theta=rope_theta,
+                                                        d_k=d_model//num_heads, 
+                                                        max_seq_len=context_length)
 
+        self.transformer_layers = nn.ModuleList(
+            [
+                TransformerBlock(d_model=d_model,
+                                 num_heads=num_heads,
+                                 d_ff=d_ff,
+                                 eps=rms_eps,
+                                 rope_embedding=self.rope_embedding
+                                )                                                    
+                                for _ in range(num_layers)
+            ]
+        )
+        
+        self.rms_norm = RMSNorm(d_model=d_model, eps=rms_eps)
+
+        self.output_linear = Linear(d_model, vocab_size)
+
+    def forward(self, x: torch.Tensor, tokens_position: torch.Tensor=None):
+
+        x = self.embedding(x)
+
+        for i in range(self.num_layers):
+            
+            x = self.transformer_layers[i](x, tokens_position)
+
+        x = self.rms_norm(x)
+
+        x = self.output_linear(x)
+
+        return x
 
 
 

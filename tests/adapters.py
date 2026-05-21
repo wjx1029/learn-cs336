@@ -21,6 +21,7 @@ from cs336_basics.prenorm_transformer_block import (
     scaled_dot_product_attention,
     MultiHeadSelfAttention,
     TransformerBlock,
+    TransformerModel,
 )
 
 def run_linear(
@@ -426,8 +427,39 @@ def run_transformer_lm(
         Float[Tensor, "batch_size sequence_length vocab_size"]: Tensor with the predicted unnormalized
         next-word distribution for each token.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    
+    model = TransformerModel(vocab_size=vocab_size,
+                             context_length=context_length,
+                             num_layers=num_layers,
+                             d_model=d_model,
+                             num_heads=num_heads,
+                             d_ff=d_ff,
+                             rope_theta=rope_theta,
+                             rms_eps=1e-5
+                             )
+    
+    with torch.no_grad():
+        model.embedding.embed_mat.copy_(weights['token_embeddings.weight'])
+        for i, layer in enumerate(model.transformer_layers):
+            qkv_proj_weights = torch.cat([weights[f'layers.{i}.attn.q_proj.weight'],
+                                          weights[f'layers.{i}.attn.k_proj.weight'],
+                                          weights[f'layers.{i}.attn.v_proj.weight']],
+                                          dim=0
+                                          )
+            model.transformer_layers[i].mha_layer.Wqkv.W.copy_(qkv_proj_weights)
+            model.transformer_layers[i].mha_layer.Wo.W.copy_(weights[f'layers.{i}.attn.output_proj.weight'])
+            model.transformer_layers[i].rms_norm1.G.copy_(weights[f'layers.{i}.ln1.weight'])
+            model.transformer_layers[i].swiglu_layer.linear1.W.copy_(weights[f'layers.{i}.ffn.w1.weight'])
+            model.transformer_layers[i].swiglu_layer.linear2.W.copy_(weights[f'layers.{i}.ffn.w2.weight'])
+            model.transformer_layers[i].swiglu_layer.linear3.W.copy_(weights[f'layers.{i}.ffn.w3.weight'])
+            model.transformer_layers[i].rms_norm2.G.copy_(weights[f'layers.{i}.ln2.weight'])
 
+        model.rms_norm.G.copy_(weights['ln_final.weight'])
+
+        model.output_linear.W.copy_(weights['lm_head.weight'])
+
+        return model(in_indices)
 
 def run_rmsnorm(
     d_model: int,

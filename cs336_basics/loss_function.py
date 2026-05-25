@@ -1,7 +1,5 @@
 import torch
 
-from .softmax import softmax
-
 
 def cross_entropy(logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
     """Given a tensor of inputs and targets, compute the average cross-entropy

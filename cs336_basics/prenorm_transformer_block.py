@@ -293,8 +293,8 @@ class TransformerModel(nn.Module):
                        num_layers: int,
                        d_model: int,
                        num_heads: int,
-                       d_ff: int,
                        rope_theta: float,
+                       d_ff: int=None,
                        rms_eps: float=1e-5,
                        ):
         super().__init__()

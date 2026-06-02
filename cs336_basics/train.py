@@ -21,6 +21,8 @@ from cs336_basics.checkpointing import load_checkpoint, save_checkpoint
 
 import argparse
 import numpy as np
+import torch
+import matplotlib.pyplot as plt
 
 # train.py
 # │
@@ -65,22 +67,42 @@ def get_args():
     parser.add_argument('--weight_decay', type=float, default=1e-2)
 
     # training
-    parser.add_argument('--epoches', type=int, default=5e4)
+    parser.add_argument('--max_iters', type=int, default=5e4)
     parser.add_argument('--batch_size', type=int, default=16)
+    parser.add_argument('--val_interval', type=int, default=500)
+    parser.add_argument('--device', type=str, default='cpu')
 
     # checkpointp
     parser.add_argument('--save-dir', type=str, default='checkpoints')
     parser.add_argument('--resume', type=str, default=None)
+    parser.add_argument('--save_interval', type=int, default=1e3)
 
     return parser.parse_args
+
+def draw_loss(train_loss, val_loss=None):
+    plt.figure(figsize=(8, 5))
+
+    plt.plot(train_loss, label="train")
+
+    if val_loss is not None:
+        plt.plot(val_loss, label="validation")
+
+    plt.xlabel("Evaluation Step")
+    plt.ylabel("Loss")
+
+    plt.title("Loss Curve")
+    plt.legend()
+    plt.grid(True)
+
+    plt.show()
 
 
 if __name__ == "__main__":
 
-    device = 'cpu'
-
     # 解析命令行参数
     args = get_args()
+
+    device = args.device
 
     # 加载数据 (np.memmap)
     train_tokens = np.load(
@@ -123,4 +145,78 @@ if __name__ == "__main__":
             optimizer,
         )
 
+    # log loss with step
+    loss_list = {'train': [],
+                 'val': []}
+
     # Main Training Loop
+    for step in range(start_iter, args.max_iters):
+
+        model.train()
+
+        x, y = get_batch(dataset=train_tokens,
+                         batch_size=args.batch_size,
+                         context_length=args.context_len,
+                         device=device)
+        
+        logits = model(x)
+
+        loss = cross_entropy(logits=logits.view(-1, logits.size(-1)),
+                             targets=y.view(-1,)
+                             )
+        
+        optimizer.zero_grad()
+
+        loss.backward()
+
+        optimizer.backward()
+
+        gradient_clipping(parameters=model.parameters(),
+                          max_l2_norm=1.0,
+                          eps=1e-6
+                          )
+        
+        optimizer.step()
+
+        # 每args.val_intervals步评估一次模型
+        if step % args.val_intervals == 0:
+
+            model.eval()
+
+            with torch.no_grad():
+
+                val_loss = []
+
+                for _ in range():
+
+                    x, y = get_batch(dataset=val_tokens,
+                         batch_size=args.batch_size,
+                         context_length=args.context_len,
+                         device=device
+                         )
+                    
+                    logits = model(x)
+
+                    val_loss = cross_entropy(logits=logits.view(-1, logits.size(-1)),
+                                             targets=y.view(-1,)
+                                            )
+                    
+                    val_loss.append(val_loss.item())
+
+            avg_val_loss = sum(val_loss) / len(val_loss)
+
+            print(f"step={step} train_loss={loss.item():.4f} avg_val_loss={avg_val_loss:.4f}")
+
+            loss_list['train'].append(loss.item())
+            loss_list['val'].append(avg_val_loss)
+
+        # 每args.save_intervals步保存一次模型
+        if step % args.save_intervals == 0:
+
+            checkpoint_path = f"{args.save_dir}/model_{step}.ckpt"
+
+            save_checkpoint(model=model,
+                            optimizer=optimizer,
+                            iteration=step,
+                            out=checkpoint_path,
+                            )

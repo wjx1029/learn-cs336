@@ -43,13 +43,13 @@ class SwiGluFFN(nn.Module):
 
         self.d_model = d_model
         if d_ff is None:
-            self.d_ff = (d_model + 32) & ~63
+            self.d_ff = (int(d_model * 8 / 3) + 32) & ~63
         else:
             self.d_ff = d_ff
 
-        self.linear1 = Linear(d_model, d_ff, device, dtype)
-        self.linear2 = Linear(d_ff, d_model, device, dtype)
-        self.linear3 = Linear(d_model, d_ff, device, dtype)
+        self.linear1 = Linear(d_model, self.d_ff, device, dtype)
+        self.linear2 = Linear(self.d_ff, d_model, device, dtype)
+        self.linear3 = Linear(d_model, self.d_ff, device, dtype)
 
 
         self.swish = lambda x: x / (1 + torch.exp(-x))

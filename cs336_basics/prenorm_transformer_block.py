@@ -43,7 +43,7 @@ class SwiGluFFN(nn.Module):
 
         self.d_model = d_model
         if d_ff is None:
-            self.d_ff = (int(d_model * 8 / 3) + 32) & ~63
+            self.d_ff = (int(d_model * 8 / 3) + 32) & ~63        
         else:
             self.d_ff = d_ff
 

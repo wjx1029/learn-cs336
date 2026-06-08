@@ -1,17 +1,5 @@
-from cs336_basics.train_bpe import train_bpe
-from cs336_basics.tokenizer import BPETokenizer
-from cs336_basics.linear import Linear
-from cs336_basics.embedding import Embedding
-from cs336_basics.softmax import softmax
-from cs336_basics.prenorm_transformer_block import (
-    RMSNorm,
-    SwiGluFFN,
-    RotaryPositionalEmbedding,
-    scaled_dot_product_attention,
-    MultiHeadSelfAttention,
-    TransformerBlock,
-    TransformerModel,
-)
+from cs336_basics.prenorm_transformer_block import TransformerModel
+
 from cs336_basics.loss_function import cross_entropy
 from cs336_basics.optimizer import AdamW
 from cs336_basics.lr_scheduling import lr_cosine_schedule
@@ -23,6 +11,7 @@ import argparse
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+import wandb
 
 # train.py
 # │
@@ -56,7 +45,7 @@ def get_args():
     parser.add_argument('--num_layers', type=int, default=12)
     parser.add_argument('--num_heads', type=int, default=12)
     parser.add_argument('--context_len', type=int, default=1024)
-    parser.add_argument('rope_theta', type=float, default=1e5)
+    parser.add_argument('--rope_theta', type=float, default=1e5)
     parser.add_argument('--rms_eps', type=float, default=1e-5)
 
     # optimizer
@@ -66,18 +55,25 @@ def get_args():
     parser.add_argument('--opt_eps', type=float, default=1e-8)
     parser.add_argument('--weight_decay', type=float, default=1e-2)
 
+    # learing rate schedule
+    parser.add_argument("--lr_max", type=float, default=6e-4)
+    parser.add_argument("--lr_min", type=float, default=6e-5)
+    parser.add_argument("--warm_up", type=int, default=2000)
+    parser.add_argument("--cosine_end", type=int, default=50000)
+
     # training
     parser.add_argument('--max_iters', type=int, default=5e4)
     parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--val_interval', type=int, default=500)
     parser.add_argument('--device', type=str, default='cpu')
 
-    # checkpointp
-    parser.add_argument('--save-dir', type=str, default='checkpoints')
+    # checkpoint
+    parser.add_argument('--save_dir', type=str, default='checkpoints')
+    parser.add_argument('--save_best_only', action='store_true')
     parser.add_argument('--resume', type=str, default=None)
     parser.add_argument('--save_interval', type=int, default=1e3)
 
-    return parser.parse_args
+    return parser.parse_args()
 
 def draw_loss(train_loss, val_loss=None):
     plt.figure(figsize=(8, 5))
@@ -101,6 +97,12 @@ if __name__ == "__main__":
 
     # 解析命令行参数
     args = get_args()
+
+    # 打印超参数
+    print("=" * 100)
+    for k, v in vars(args).items():
+        print(f"{k}: {v}")
+    print("=" * 100)
 
     device = args.device
 
@@ -130,7 +132,7 @@ if __name__ == "__main__":
     optimizer = AdamW(
         model.parameters(),
         lr=args.lr,
-        betas=(args.beta1, args.brta2),
+        betas=(args.beta1, args.beta2),
         eps=args.opt_eps,
         weight_decay=args.weight_decay
     )
@@ -148,6 +150,13 @@ if __name__ == "__main__":
     # log loss with step
     loss_list = {'train': [],
                  'val': []}
+    run = wandb.init(
+            entity="wanjx0701-zhejiang-university",
+            project="transformer-training",
+            config=vars(args),
+        )
+    
+    min_val_loss = float('inf')
 
     # Main Training Loop
     for step in range(start_iter, args.max_iters):
@@ -159,6 +168,18 @@ if __name__ == "__main__":
                          context_length=args.context_len,
                          device=device)
         
+        # 更新学习率
+        lr = lr_cosine_schedule(
+            t=step,
+            lr_min=args.lr_min,
+            lr_max=args.lr_max,
+            warm_up=args.warm_up,
+            cosine_end=args.cosine_end
+        )
+
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = lr
+        
         logits = model(x)
 
         loss = cross_entropy(logits=logits.view(-1, logits.size(-1)),
@@ -169,7 +190,7 @@ if __name__ == "__main__":
 
         loss.backward()
 
-        optimizer.backward()
+        optimizer.step()
 
         gradient_clipping(parameters=model.parameters(),
                           max_l2_norm=1.0,
@@ -179,15 +200,15 @@ if __name__ == "__main__":
         optimizer.step()
 
         # 每args.val_intervals步评估一次模型
-        if step % args.val_intervals == 0:
+        if step % args.val_interval == 0:
 
             model.eval()
 
             with torch.no_grad():
 
-                val_loss = []
+                val_loss_list = []
 
-                for _ in range():
+                for _ in range(50):
 
                     x, y = get_batch(dataset=val_tokens,
                          batch_size=args.batch_size,
@@ -201,17 +222,38 @@ if __name__ == "__main__":
                                              targets=y.view(-1,)
                                             )
                     
-                    val_loss.append(val_loss.item())
+                    val_loss_list.append(val_loss.item())
 
-            avg_val_loss = sum(val_loss) / len(val_loss)
+            avg_val_loss = sum(val_loss_list) / len(val_loss_list)
 
             print(f"step={step} train_loss={loss.item():.4f} avg_val_loss={avg_val_loss:.4f}")
 
             loss_list['train'].append(loss.item())
             loss_list['val'].append(avg_val_loss)
+            run.log({
+                "train_loss": loss.item(),
+                "val_loss": avg_val_loss,
+                "step": step,
+            })
+
+            # 只保存最好的模型
+            if args.save_best_only:
+
+                if avg_val_loss < min_val_loss:
+
+                    min_val_loss = avg_val_loss
+
+                    checkpoint_path = f"{args.save_dir}/model_best.ckpt"
+
+                    save_checkpoint(model=model,
+                                    optimizer=optimizer,
+                                    iteration=step,
+                                    out=checkpoint_path,
+                                    )
+
 
         # 每args.save_intervals步保存一次模型
-        if step % args.save_intervals == 0:
+        if step % args.save_interval == 0 and not args.save_best_only:
 
             checkpoint_path = f"{args.save_dir}/model_{step}.ckpt"
 
@@ -220,3 +262,7 @@ if __name__ == "__main__":
                             iteration=step,
                             out=checkpoint_path,
                             )
+        
+    run.finish()
+
+    draw_loss(loss_list['train'], loss_list['val'])

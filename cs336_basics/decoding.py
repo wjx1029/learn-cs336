@@ -1,51 +1,88 @@
 import torch
 
 
-def decode(model, 
-           input_tokens,
-           max_length=1024,
-           temperature=0.8,
-           top_p=0.9
-           ):
-    
-    """
-    input_tokens -> (sequence_length, vocab_size)
-    """
-    if len(input_tokens) >= max_length:
-        return input_tokens
-    
-    infer_nums = max_length - len(input_tokens)
+def decode(
+    model,
+    input_tokens,
+    max_length=1024,
+    temperature=0.8,
+    top_p=0.9,
+):
+    while input_tokens.size(-1) < max_length:
 
-    for _ in range(infer_nums):
+        logits = model(input_tokens)[:,-1,:]
 
-        predict_token = model.forward(input_tokens)[-1]
+        probs = torch.softmax(
+            logits / temperature,
+            dim=-1
+        )
 
-        tmp = torch.exp(predict_token / temperature)
+        sorted_probs, sorted_idx = torch.sort(
+            probs,
+            descending=True
+        )
 
-        predict_token = tmp / tmp.sum()
+        cumulative_probs = torch.cumsum(
+            sorted_probs,
+            dim=-1
+        )
 
-        sorted_probs, sorted_idx = torch.sort(predict_token, descending=True)
+        mask = cumulative_probs > top_p
 
-        cumulative_prob = 0.0
-        candidate_num = 0
+        # 保留第一个超过top_p的token
+        mask[..., 1:] = mask[..., :-1].clone()
+        mask[..., 0] = False
 
-        for prob in sorted_probs:
+        sorted_probs[mask] = 0
 
-            cumulative_prob += prob
-            candidate_num += 1
+        sorted_probs /= sorted_probs.sum(dim=-1, keepdim=True)
 
-            if cumulative_prob >= top_p:
-                break
+        sampled = torch.multinomial(
+            sorted_probs,
+            num_samples=1
+        )
 
-        sorted_probs[candidate_num:-1] = 0
+        next_token = sorted_idx.gather(
+            -1,
+            sampled
+        )
 
-        sorted_probs /= sorted_probs.sum(sorted_probs)
+        if next_token.item() == 0:
+            break
 
-        sampled = torch.multinomial(sorted_probs, num_samples=1)
+        input_tokens = torch.cat(
+            [input_tokens, next_token],
+            dim=-1
+        )
 
-        token = sorted_idx.gather(-1, sampled)
+    return input_tokens
 
 
+# test
 
+# class DummyModel:
+#     def __call__(self, tokens):
+#         # vocab_size = 5
+#         return torch.tensor([[
+#             1.0,   # token 0
+#             2.0,   # token 1
+#             5.0,   # token 2
+#             0.5,   # token 3
+#             0.1    # token 4
+#         ]])
+
+# model = DummyModel()
+
+# input_tokens = torch.tensor([1, 2])
+
+# output = decode(
+#     model,
+#     input_tokens,
+#     max_length=10,
+#     temperature=1.0,
+#     top_p=0.9
+# )
+
+# print(output)
 
 

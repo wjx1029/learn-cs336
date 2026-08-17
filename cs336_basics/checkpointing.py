@@ -50,6 +50,7 @@ def load_checkpoint(
     checkpoint = torch.load(src, map_location="cpu")
 
     model.load_state_dict(checkpoint['model'])
-    optimizer.load_state_dict(checkpoint['optimizer'])
+    if optimizer is not None:
+        optimizer.load_state_dict(checkpoint['optimizer'])
 
     return checkpoint['iteration']

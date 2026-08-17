@@ -92,6 +92,8 @@ def draw_loss(train_loss, val_loss=None):
 
     plt.show()
 
+    plt.savefig()
+
 
 if __name__ == "__main__":
 
@@ -128,6 +130,8 @@ if __name__ == "__main__":
         rms_eps=args.rms_eps,
     ).to(device)
 
+    model = torch.compile(model)
+
     # 创建优化器
     optimizer = AdamW(
         model.parameters(),
@@ -159,7 +163,7 @@ if __name__ == "__main__":
     min_val_loss = float('inf')
 
     # Main Training Loop
-    for step in range(start_iter, args.max_iters):
+    for step in range(start_iter, args.max_iters + 1):
 
         model.train()
 
@@ -265,4 +269,5 @@ if __name__ == "__main__":
         
     run.finish()
 
-    draw_loss(loss_list['train'], loss_list['val'])
+    # draw_loss(loss_list['train'], loss_list['val'])
+

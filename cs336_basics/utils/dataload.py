@@ -3,7 +3,7 @@ import numpy.typing as npt
 import numpy as np
 import os
 
-from cs336_basics.utils.tokenizer import tokenizer_10000, tokenizer_32000
+# from cs336_basics.utils.tokenizer import tokenizer_10000, tokenizer_32000
 
 def tokenize_and_save(dataset_path, tokenizer, output_path, max_length=None):
 
@@ -159,6 +159,8 @@ while True:
 """
 
 if __name__ == "__main__":
+
+    
 
     train_path = os.path.join('..', '..', "data", "TinyStoriesV2-GPT4-train.txt")
     valid_path = os.path.join('..', '..', "data", "TinyStoriesV2-GPT4-valid.txt")

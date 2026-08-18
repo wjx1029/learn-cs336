@@ -51,17 +51,15 @@ class SwiGluFFN(nn.Module):
         self.linear2 = Linear(self.d_ff, d_model, device, dtype)
         self.linear3 = Linear(d_model, self.d_ff, device, dtype)
 
-
-        self.swish = lambda x: x / (1 + torch.exp(-x))
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         
-        x1 = self.swish(self.linear1(x))
+        up = self.linear1(x)
 
-        x2 = self.linear3(x)
+        up = up * torch.sigmoid(up)
 
+        gate = self.linear3(x)
 
-        result = self.linear2(x1 * x2)
+        result = self.linear2(up * gate)
 
         return result
 
@@ -299,10 +297,10 @@ class TransformerModel(nn.Module):
                        ):
         super().__init__()
 
-        # self.vocab_size = vocab_size
-        # self.context_length = context_length
-        # self.d_model = d_model
-        # self.num_heads = num_heads
+        self.vocab_size = vocab_size
+        self.context_length = context_length
+        self.d_model = d_model
+        self.num_heads = num_heads
         self.num_layers = num_layers
 
         self.embedding = Embedding(num_embeddings=vocab_size, embedding_dim=d_model)

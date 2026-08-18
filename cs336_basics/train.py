@@ -1,11 +1,12 @@
 from cs336_basics.prenorm_transformer_block import TransformerModel
 
-from cs336_basics.loss_function import cross_entropy
-from cs336_basics.optimizer import AdamW
-from cs336_basics.lr_scheduling import lr_cosine_schedule
-from cs336_basics.gradient_clip import gradient_clipping
-from cs336_basics.dataloading import get_batch
-from cs336_basics.checkpointing import load_checkpoint, save_checkpoint
+from cs336_basics.utils.loss_function import cross_entropy, calculate_perplexity
+from cs336_basics.utils.optimizer import AdamW
+from cs336_basics.utils.lr_scheduling import lr_cosine_schedule
+from cs336_basics.utils.gradient_clip import gradient_clipping
+from cs336_basics.utils.dataload import get_batch
+from cs336_basics.utils.checkpointing import load_checkpoint, save_checkpoint
+from cs336_basics.utils.device import try_gpu
 
 import argparse
 import numpy as np
@@ -106,7 +107,7 @@ if __name__ == "__main__":
         print(f"{k}: {v}")
     print("=" * 100)
 
-    device = args.device
+    device = args.try_gpu()
 
     # 加载数据 (np.memmap)
     train_tokens = np.load(
@@ -152,8 +153,8 @@ if __name__ == "__main__":
         )
 
     # log loss with step
-    loss_list = {'train': [],
-                 'val': []}
+    # loss_list = {'train': [],
+    #              'val': []}
     run = wandb.init(
             entity="wanjx0701-zhejiang-university",
             project="transformer-training",
@@ -161,6 +162,8 @@ if __name__ == "__main__":
         )
     
     min_val_loss = float('inf')
+
+    train_loss_list = []
 
     # Main Training Loop
     for step in range(start_iter, args.max_iters + 1):
@@ -186,15 +189,14 @@ if __name__ == "__main__":
         
         logits = model(x)
 
-        loss = cross_entropy(logits=logits.view(-1, logits.size(-1)),
-                             targets=y.view(-1,)
-                             )
+        loss = cross_entropy(
+                                logits=logits.view(-1, logits.size(-1)),
+                                targets=y.view(-1,)
+                            )
         
         optimizer.zero_grad()
 
         loss.backward()
-
-        optimizer.step()
 
         gradient_clipping(parameters=model.parameters(),
                           max_l2_norm=1.0,
@@ -203,14 +205,17 @@ if __name__ == "__main__":
         
         optimizer.step()
 
+        train_loss_list.append(loss.item())
+
         # 每args.val_intervals步评估一次模型
-        if step % args.val_interval == 0:
+        if step != 0 and step % args.val_interval == 0:
 
             model.eval()
 
             with torch.no_grad():
 
                 val_loss_list = []
+                perplexity_list = []
 
                 for _ in range(50):
 
@@ -222,21 +227,30 @@ if __name__ == "__main__":
                     
                     logits = model(x)
 
-                    val_loss = cross_entropy(logits=logits.view(-1, logits.size(-1)),
+                    val_loss = cross_entropy(
+                                             logits=logits.view(-1, logits.size(-1)),
                                              targets=y.view(-1,)
                                             )
+
+                    perplexity = calculate_perplexity(
+                                            logits=logits.view(-1, logits.size(-1)),
+                                            targets=y.view(-1,)
+                    )
                     
                     val_loss_list.append(val_loss.item())
+                    perplexity_list.append(perplexity.item())
 
             avg_val_loss = sum(val_loss_list) / len(val_loss_list)
+            avg_perplexity = sum(perplexity_list) / len(perplexity_list)
+            avg_train_loss = sum(train_loss_list) / len(train_loss_list)
+            train_loss_list = []    # 清除loss
 
-            print(f"step={step} train_loss={loss.item():.4f} avg_val_loss={avg_val_loss:.4f}")
+            print(f"step={step}/ttrain_loss={avg_train_loss:.4f}/tval_loss={avg_val_loss:.4f}/tperplexity={avg_perplexity:.4f}")
 
-            loss_list['train'].append(loss.item())
-            loss_list['val'].append(avg_val_loss)
             run.log({
-                "train_loss": loss.item(),
+                "train_loss": avg_train_loss,
                 "val_loss": avg_val_loss,
+                "perplexity": avg_perplexity,
                 "step": step,
             })
 
@@ -247,7 +261,7 @@ if __name__ == "__main__":
 
                     min_val_loss = avg_val_loss
 
-                    checkpoint_path = f"{args.save_dir}/model_best.ckpt"
+                    checkpoint_path = f"{args.save_dir}/best.pth"
 
                     save_checkpoint(model=model,
                                     optimizer=optimizer,
@@ -257,7 +271,7 @@ if __name__ == "__main__":
 
 
         # 每args.save_intervals步保存一次模型
-        if step % args.save_interval == 0 and not args.save_best_only:
+        if step > 0 and step % args.save_interval == 0 and not args.save_best_only:
 
             checkpoint_path = f"{args.save_dir}/model_{step}.ckpt"
 

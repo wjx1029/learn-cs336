@@ -26,7 +26,7 @@ uv run train.py \
         --cosine_end 5000 \
         \
         --max_iters 5000 \
-        --batch_size 12 \
+        --batch_size 8 \
         --val_interval 500 \
         --device cpu \
         \

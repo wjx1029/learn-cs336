@@ -28,7 +28,7 @@ from cs336_basics.utils.optimizer import AdamW
 from cs336_basics.utils.lr_scheduling import lr_cosine_schedule
 from cs336_basics.utils.gradient_clip import gradient_clipping
 from cs336_basics.utils.dataload import get_batch
-from cs336_basics.checkpointing import load_checkpoint, save_checkpoint
+from cs336_basics.utils.checkpointing import load_checkpoint, save_checkpoint
 
 
 def run_linear(

@@ -1,4 +1,4 @@
-from cs336_basics.checkpointing import load_checkpoint
+from cs336_basics.utils.checkpointing import load_checkpoint
 from cs336_basics.decoding import decode
 from cs336_basics.prenorm_transformer_block import TransformerModel
 from cs336_basics.utils.tokenizer import BPETokenizer

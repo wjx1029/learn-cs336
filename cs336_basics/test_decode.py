@@ -1,7 +1,7 @@
 from cs336_basics.checkpointing import load_checkpoint
 from cs336_basics.decoding import decode
 from cs336_basics.prenorm_transformer_block import TransformerModel
-from cs336_basics.tokenizer import BPETokenizer
+from cs336_basics.utils.tokenizer import BPETokenizer
 import torch
 
 device = 'cpu'
@@ -17,34 +17,34 @@ model = TransformerModel(
         rms_eps=1e-5,
     ).to(device)
 
-load_checkpoint(src='checkpoints/model_best.ckpt',
-                model=model,
-                optimizer=None
-                )
+# load_checkpoint(src='checkpoints/model_best.ckpt',
+#                 model=model,
+#                 optimizer=None
+#                 )
 
-bpe_tokenizer = BPETokenizer.from_files(vocab_filepath='./data/TinyStoriesV2-GPT4/vocab.csv',
-                                        merges_filepath='./data/TinyStoriesV2-GPT4/merges.csv',
-                                        special_tokens=['<|endoftext|>']
-                                        )
+# bpe_tokenizer = BPETokenizer.from_files(vocab_filepath='./data/TinyStoriesV2-GPT4/vocab.csv',
+#                                         merges_filepath='./data/TinyStoriesV2-GPT4/merges.csv',
+#                                         special_tokens=['<|endoftext|>']
+#                                         )
 
-prompt = "Once upon a time there was a little boy named Ben"
+# prompt = "Once upon a time there was a little boy named Ben"
 
-tokens = bpe_tokenizer.encode(prompt)
-tokens= torch.tensor(
-    tokens,
-    dtype=torch.long,
-    device=device
-).unsqueeze(0)
+# tokens = bpe_tokenizer.encode(prompt)
+# tokens= torch.tensor(
+#     tokens,
+#     dtype=torch.long,
+#     device=device
+# ).unsqueeze(0)
 
-print(tokens)
+# print(tokens)
 
-output = decode(model=model,
-                input_tokens=tokens,
-                max_length=128,
-                )
+# output = decode(model=model,
+#                 input_tokens=tokens,
+#                 max_length=128,
+#                 )
 
-print(output)
+# print(output)
 
-output = bpe_tokenizer.decode(output.squeeze(0).tolist())
+# output = bpe_tokenizer.decode(output.squeeze(0).tolist())
 
-print(output)
+# print(output)

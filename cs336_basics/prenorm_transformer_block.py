@@ -3,9 +3,9 @@ import torch
 import math
 import einops
 
-from .linear import Linear
-from .softmax import softmax
-from .embedding import Embedding
+from .utils.linear import Linear
+from .utils.softmax import softmax
+from .utils.embedding import Embedding
 
 class RMSNorm(nn.Module):
     def __init__(self, d_model: int, eps: float = 1e-5, device=None, dtype=None):
@@ -27,7 +27,7 @@ class RMSNorm(nn.Module):
         in_dtype = x.dtype
         x = x.to(torch.float32)
 
-        rms_x = torch.rsqrt(torch.mean(torch.square(x), dim = -1, keepdim=True) + self.eps)
+        rms_x = torch.rsqrt(torch.mean(torch.square(x), dim=-1, keepdim=True) + self.eps)
         result = rms_x * x * self.G
 
         return result.to(in_dtype)

@@ -9,11 +9,11 @@ import torch
 from jaxtyping import Bool, Float, Int
 from torch import Tensor
 
-from cs336_basics.train_bpe import train_bpe
-from cs336_basics.tokenizer import BPETokenizer
-from cs336_basics.linear import Linear
-from cs336_basics.embedding import Embedding
-from cs336_basics.softmax import softmax
+from cs336_basics.bpe_training.train_bpe import train_bpe
+from cs336_basics.utils.tokenizer import BPETokenizer
+from cs336_basics.utils.linear import Linear
+from cs336_basics.utils.embedding import Embedding
+from cs336_basics.utils.softmax import softmax
 from cs336_basics.prenorm_transformer_block import (
     RMSNorm,
     SwiGluFFN,
@@ -23,10 +23,10 @@ from cs336_basics.prenorm_transformer_block import (
     TransformerBlock,
     TransformerModel,
 )
-from cs336_basics.loss_function import cross_entropy
-from cs336_basics.optimizer import AdamW
-from cs336_basics.lr_scheduling import lr_cosine_schedule
-from cs336_basics.gradient_clip import gradient_clipping
+from cs336_basics.utils.loss_function import cross_entropy
+from cs336_basics.utils.optimizer import AdamW
+from cs336_basics.utils.lr_scheduling import lr_cosine_schedule
+from cs336_basics.utils.gradient_clip import gradient_clipping
 from cs336_basics.dataloading import get_batch
 from cs336_basics.checkpointing import load_checkpoint, save_checkpoint
 

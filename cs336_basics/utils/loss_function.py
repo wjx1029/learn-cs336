@@ -34,3 +34,24 @@ def cross_entropy(logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
     loss = logsumexp - target_logits
 
     return loss.mean()
+
+
+def calculate_perplexity(logits: torch.Tensor, targets: torch.Tensor) -> float:
+    """
+    计算给定 logits 和 targets 的困惑度。
+
+    Args:
+        logits (torch.Tensor): 模型的输出，形状为 [batch_size, vocab_size]。
+        targets (torch.Tensor): 真实的 token 序列，形状为 [batch_size]。
+
+    Returns:
+        float: 计算出的困惑度值。
+    """
+    # 1. 使用你提供的 cross_entropy 函数计算平均损失
+    avg_loss = cross_entropy(logits, targets)
+
+    # 2. 对平均损失取自然指数，得到困惑度
+    perplexity = torch.exp(avg_loss)
+
+    # 3. 将结果从 tensor 转换为 Python 的 float 类型，方便打印和比较
+    return perplexity.item()

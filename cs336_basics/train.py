@@ -13,6 +13,7 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 import wandb
+import os
 
 # train.py
 # │
@@ -35,6 +36,8 @@ import wandb
 def get_args():
 
     parser = argparse.ArgumentParser()
+
+    parser.add_argument('--experiment_name', type=str, default='train')
 
     # data
     parser.add_argument('--train_data', type=str, required=True)
@@ -76,25 +79,6 @@ def get_args():
 
     return parser.parse_args()
 
-def draw_loss(train_loss, val_loss=None):
-    plt.figure(figsize=(8, 5))
-
-    plt.plot(train_loss, label="train")
-
-    if val_loss is not None:
-        plt.plot(val_loss, label="validation")
-
-    plt.xlabel("Evaluation Step")
-    plt.ylabel("Loss")
-
-    plt.title("Loss Curve")
-    plt.legend()
-    plt.grid(True)
-
-    plt.show()
-
-    plt.savefig()
-
 
 if __name__ == "__main__":
 
@@ -106,6 +90,12 @@ if __name__ == "__main__":
     for k, v in vars(args).items():
         print(f"{k}: {v}")
     print("=" * 100)
+
+    # 保存超参数
+    save_dir = os.path.join(args.save_dir, args.experiment_name)
+    os.makedirs(save_dir, exist_ok=True)
+    with open(os.path.join(save_dir, 'h_params.txt'), 'w') as f: 
+        f.write(str(args))
 
     device = args.try_gpu()
 
@@ -153,8 +143,6 @@ if __name__ == "__main__":
         )
 
     # log loss with step
-    # loss_list = {'train': [],
-    #              'val': []}
     run = wandb.init(
             entity="wanjx0701-zhejiang-university",
             project="transformer-training",
@@ -261,7 +249,7 @@ if __name__ == "__main__":
 
                     min_val_loss = avg_val_loss
 
-                    checkpoint_path = f"{args.save_dir}/best.pth"
+                    checkpoint_path = os.path.join(save_dir, 'best.pth')
 
                     save_checkpoint(model=model,
                                     optimizer=optimizer,
@@ -273,7 +261,7 @@ if __name__ == "__main__":
         # 每args.save_intervals步保存一次模型
         if step > 0 and step % args.save_interval == 0 and not args.save_best_only:
 
-            checkpoint_path = f"{args.save_dir}/model_{step}.ckpt"
+            checkpoint_path = os.path.join(save_dir, f'model_{step}.ckpt')
 
             save_checkpoint(model=model,
                             optimizer=optimizer,

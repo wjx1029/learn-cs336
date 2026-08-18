@@ -8,10 +8,17 @@ def decode(
     temperature=0.8,
     top_p=0.9,
 ):
+
+    # 确保 input_tokens 在正确的设备上
+    device = input_tokens.device
+    
     while input_tokens.size(-1) < max_length:
 
-        logits = model(input_tokens)[:,-1,:]
+        # 1. 推理
+        with torch.no_grad(): # 推理不需要梯度，节省显存
+            logits = model(input_tokens)[:, -1, :]
 
+        # 2. 温度缩放 + Softmax 获取概率
         probs = torch.softmax(
             logits / temperature,
             dim=-1
@@ -19,7 +26,8 @@ def decode(
 
         sorted_probs, sorted_idx = torch.sort(
             probs,
-            descending=True
+            descending=True,
+            dim=-1
         )
 
         cumulative_probs = torch.cumsum(
@@ -47,7 +55,7 @@ def decode(
             sampled
         )
 
-        if next_token.item() == 0:
+        if next_token.item() == 256:    # <|endoftext|> 的ID为256
             break
 
         input_tokens = torch.cat(
@@ -62,25 +70,19 @@ def decode(
 
 # class DummyModel:
 #     def __call__(self, tokens):
-#         # vocab_size = 5
-#         return torch.tensor([[
-#             1.0,   # token 0
-#             2.0,   # token 1
-#             5.0,   # token 2
-#             0.5,   # token 3
-#             0.1    # token 4
-#         ]])
+#         # vocab_size = 10
+#         return torch.randn(size=(1, 1, 5))
 
 # model = DummyModel()
 
-# input_tokens = torch.tensor([1, 2])
+# input_tokens = torch.tensor([[1, 2]])
 
 # output = decode(
 #     model,
 #     input_tokens,
 #     max_length=10,
 #     temperature=1.0,
-#     top_p=0.9
+#     top_p=0.8
 # )
 
 # print(output)

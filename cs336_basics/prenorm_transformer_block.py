@@ -3,9 +3,9 @@ import torch
 import math
 import einops
 
-from .utils.linear import Linear
-from .utils.softmax import softmax
-from .utils.embedding import Embedding
+from cs336_basics.utils.linear import Linear
+from cs336_basics.utils.softmax import softmax
+from cs336_basics.utils.embedding import Embedding
 
 class RMSNorm(nn.Module):
     def __init__(self, d_model: int, eps: float = 1e-5, device=None, dtype=None):

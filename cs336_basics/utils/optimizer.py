@@ -26,8 +26,8 @@ class AdamW(torch.optim.Optimizer):
                 state = self.state[p]
                 if len(state) == 0:
                     state['step'] = 1
-                    state['exp_avg'] = torch.zeros_like(p.data)
-                    state['exp_avg_sq'] = torch.zeros_like(p.data)
+                    state['exp_avg'] = torch.zeros_like(p.data)         # m 第一动量
+                    state['exp_avg_sq'] = torch.zeros_like(p.data)      # v 第二动量
                 
                 t = state['step']
 

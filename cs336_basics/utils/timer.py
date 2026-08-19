@@ -19,7 +19,7 @@ class Timer():
         else:
             hours = int(total_seconds // 3600)
             minutes = int((total_seconds % 3600) // 60)
-            return f"{hours}小时{minutes}分"
+            return f"{hours}时{minutes}分"
     
     def __call__(self):
         return self.get_elapsed_time()

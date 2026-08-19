@@ -7,6 +7,7 @@ from cs336_basics.utils.gradient_clip import gradient_clipping
 from cs336_basics.utils.dataload import get_batch
 from cs336_basics.utils.checkpointing import load_checkpoint, save_checkpoint
 from cs336_basics.utils.device import try_gpu
+from cs336_basics.utils.timer import Timer
 
 import argparse
 import numpy as np
@@ -153,6 +154,8 @@ if __name__ == "__main__":
 
     train_loss_list = []
 
+    timer = Timer()
+
     # Main Training Loop
     for step in range(start_iter, args.max_iters + 1):
 
@@ -233,7 +236,7 @@ if __name__ == "__main__":
             avg_train_loss = sum(train_loss_list) / len(train_loss_list)
             train_loss_list = []    # 清除loss
 
-            print(f"step={step}/ttrain_loss={avg_train_loss:.4f}/tval_loss={avg_val_loss:.4f}/tperplexity={avg_perplexity:.4f}")
+            print(f"[{timer()}]  step={step}\ttrain_loss={avg_train_loss:.4f}\tval_loss={avg_val_loss:.4f}\tperplexity={avg_perplexity:.4f}")
 
             run.log({
                 "train_loss": avg_train_loss,

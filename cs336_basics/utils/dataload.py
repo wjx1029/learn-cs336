@@ -168,9 +168,11 @@ if __name__ == "__main__":
     vocab_filepath = os.path.join('..', 'data', 'TinyStoriesV2-GPT4', f'vs_{sys.argv[1]}', 'vocab.csv')
     merges_filepath = os.path.join('..', 'data', 'TinyStoriesV2-GPT4', f'vs_{sys.argv[1]}', 'merges.csv')
 
-    tokenizer = BPETokenizer.from_files(vocab_filepath=vocab_filepath
-                                       merges_filepath=merges_filepath
-                                       special_tokens=['<|endoftext|>'])
+    tokenizer = BPETokenizer.from_files(
+                                       vocab_filepath=vocab_filepath,
+                                       merges_filepath=merges_filepath,
+                                       special_tokens=['<|endoftext|>']
+                                       )
     
 
     train_path = os.path.join('..', '..', "data", "TinyStoriesV2-GPT4-train.txt")

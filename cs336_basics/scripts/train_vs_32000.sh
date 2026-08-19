@@ -1,8 +1,12 @@
 #!/bin/bash
 
 # cd ~/cs336/assignments/assignment1-basics/cs336_basics
-# Total tokens processed 40,960,000 ~ 327,680,000 
-# (your batch size × total step count × context length should equalroughly this value).
+
+
+cd utils
+
+uv run dataload.py 32000
+
 
 uv run train.py \
         --experiment_name base \

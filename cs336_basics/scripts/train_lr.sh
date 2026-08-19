@@ -5,7 +5,7 @@
 # lr_max: 1e-4, 1e-3, 1e-2, 1e-1, 1
 # lr_min: 1e-5, 1e-4, 1e-3, 1e-2, 1e-1
 
-uv run scripts/train.py \
+uv run train.py \
         --experiment_name LR_small \
         --train_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/train/tokens.npy \
         --val_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/valid/tokens.npy \
@@ -39,7 +39,7 @@ uv run scripts/train.py \
         --save_interval 1000 
 
 
-uv run scripts/train.py \
+uv run train.py \
         --experiment_name LR_large \
         --train_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/train/tokens.npy \
         --val_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/valid/tokens.npy \
@@ -73,7 +73,7 @@ uv run scripts/train.py \
         --save_interval 1000 
 
 
-uv run scripts/train.py \
+uv run train.py \
         --experiment_name LR_larger \
         --train_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/train/tokens.npy \
         --val_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/valid/tokens.npy \
@@ -107,7 +107,7 @@ uv run scripts/train.py \
         --save_interval 1000 
 
 
-uv run scripts/train.py \
+uv run train.py \
         --experiment_name LR_x_large \
         --train_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/train/tokens.npy \
         --val_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/valid/tokens.npy \

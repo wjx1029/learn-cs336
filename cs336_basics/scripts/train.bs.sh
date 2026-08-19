@@ -5,7 +5,7 @@
 # batch size: 8, 16, 32, 128,
 # 学习率随 batch_size 线性改变
 
-uv run scripts/train.py \
+uv run train.py \
         --experiment_name BS_8 \
         --train_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/train/tokens.npy \
         --val_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/valid/tokens.npy \
@@ -39,7 +39,7 @@ uv run scripts/train.py \
         --save_interval 1000 
 
 
-uv run scripts/train.py \
+uv run train.py \
         --experiment_name BS_16 \
         --train_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/train/tokens.npy \
         --val_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/valid/tokens.npy \
@@ -73,7 +73,7 @@ uv run scripts/train.py \
         --save_interval 1000  
 
 
-uv run scripts/train.py \
+uv run train.py \
         --experiment_name BS_32 \
         --train_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/train/tokens.npy \
         --val_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/valid/tokens.npy \
@@ -106,8 +106,8 @@ uv run scripts/train.py \
         --save_best_only \
         --save_interval 1000 
 
-uv run scripts/train.py \
-        --experiment_name BS_8 \
+uv run train.py \
+        --experiment_name BS_128 \
         --train_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/train/tokens.npy \
         --val_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/valid/tokens.npy \
         --vocab_size 10000 \

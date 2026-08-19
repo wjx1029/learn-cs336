@@ -134,7 +134,7 @@ if __name__ == "__main__":
     )
 
     # 恢复 checkpoint
-    start_iter = 0
+    start_iter = 1
 
     if args.resume is not None:
         start_iter = load_checkpoint(

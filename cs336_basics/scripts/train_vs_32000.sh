@@ -7,12 +7,13 @@ cd utils
 
 uv run dataload.py 32000
 
+cd ..
 
 uv run train.py \
         --experiment_name base \
-        --train_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/train/tokens.npy \
-        --val_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/valid/tokens.npy \
-        --vocab_size 10000 \
+        --train_data data/TinyStoriesV2-GPT4/vs_32000/token_ids/train/tokens.npy \
+        --val_data data/TinyStoriesV2-GPT4/vs_32000/token_ids/valid/tokens.npy \
+        --vocab_size 32000 \
         \
         --d_model 512 \
         --num_layers 4 \

@@ -10,7 +10,7 @@ uv run dataload.py 32000
 cd ..
 
 uv run train.py \
-        --experiment_name base \
+        --experiment_name vs_32000 \
         --train_data data/TinyStoriesV2-GPT4/vs_32000/token_ids/train/tokens.npy \
         --val_data data/TinyStoriesV2-GPT4/vs_32000/token_ids/valid/tokens.npy \
         --vocab_size 32000 \

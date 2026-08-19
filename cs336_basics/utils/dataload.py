@@ -2,8 +2,9 @@ import torch
 import numpy.typing as npt
 import numpy as np
 import os
+import sys
 
-# from cs336_basics.utils.tokenizer import tokenizer_10000, tokenizer_32000
+from cs336_basics.utils.tokenizer import BPETokenizer
 
 def tokenize_and_save(dataset_path, tokenizer, output_path, max_length=None):
 
@@ -160,11 +161,21 @@ while True:
 
 if __name__ == "__main__":
 
+    if len(sys.argv) < 2:
+        print("用法: python script.py <vocab_size>") 
+        sys.exit(1)
+
+    vocab_filepath = os.path.join('..', 'data', 'TinyStoriesV2-GPT4', f'vs_{sys.argv[1]}', 'vocab.csv')
+    merges_filepath = os.path.join('..', 'data', 'TinyStoriesV2-GPT4', f'vs_{sys.argv[1]}', 'merges.csv')
+
+    tokenizer = BPETokenizer.from_files(vocab_filepath=vocab_filepath
+                                       merges_filepath=merges_filepath
+                                       special_tokens=['<|endoftext|>'])
     
 
     train_path = os.path.join('..', '..', "data", "TinyStoriesV2-GPT4-train.txt")
     valid_path = os.path.join('..', '..', "data", "TinyStoriesV2-GPT4-valid.txt")
-    output_dir = os.path.join("..", "data", "TinyStoriesV2-GPT4", f"vs_{tokenizer_10000.vocab_size}", "token_ids")
+    output_dir = os.path.join("..", "data", "TinyStoriesV2-GPT4", f"vs_{tokenizer.vocab_size}", "token_ids")
 
-    tokenize_and_save_mmap(train_path, tokenizer_10000, os.path.join(output_dir, "train"))
-    tokenize_and_save(valid_path, tokenizer_10000, os.path.join(output_dir, "valid"))
+    tokenize_and_save_mmap(train_path, tokenizer, os.path.join(output_dir, "train"))
+    tokenize_and_save(valid_path, tokenizer, os.path.join(output_dir, "valid"))

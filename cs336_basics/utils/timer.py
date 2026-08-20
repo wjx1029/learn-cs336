@@ -26,11 +26,11 @@ class Timer():
 
     
 
-# 使用示例
-timer = Timer()
+# # 使用示例
+# timer = Timer()
 
-# 你的代码
-time.sleep(5)
+# # 你的代码
+# time.sleep(5)
 
-# 输出
-print(f"运行时间: {timer()}")
+# # 输出
+# print(f"运行时间: {timer()}")

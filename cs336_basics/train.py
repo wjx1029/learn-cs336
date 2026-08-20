@@ -98,7 +98,7 @@ if __name__ == "__main__":
     with open(os.path.join(save_dir, 'h_params.txt'), 'w') as f: 
         f.write(str(args))
 
-    device = args.try_gpu()
+    device = try_gpu()
 
     # 加载数据 (np.memmap)
     train_tokens = np.load(

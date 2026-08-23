@@ -2,14 +2,17 @@ import os
 from collections import defaultdict, Counter
 import regex as re  # type: ignore
 from typing import Dict, Tuple, List, Iterable, Iterator
+import sys
 
 from cs336_basics.bpe_training import pretokenization_example
 
+# is_print = len(sys.argv) > 1 and sys.argv[1].lower() == 'true' 
 
 def train_bpe(
     input_path: str | os.PathLike,  # 输入语料文件的路径
     vocab_size: int,             # 目标词表大小（基础字节 + 合并 Token + 特殊 Token）
     special_tokens: list[str],   # 需要保留的特殊 Token 列表
+    is_print = false
 ) -> tuple[dict[int, bytes], list[tuple[bytes, bytes]]]:
     """
     训练字节级 BPE (Byte-Pair Encoding) 分词器。
@@ -53,7 +56,8 @@ def train_bpe(
 
             # 如果指定了特殊 Token，我们需要在开始统计之前将它们从语料中“隔离”出来。
             # 这能防止 BPE 规则将特殊 Token（如 <|endoftext|>）拆开或与普通文本混合。
-            print(f"处理第[{i} / {num_processes}]块...")
+            if is_print:
+                print(f"处理第[{i} / {num_processes}]块...")
             """
             For special_tokens:
             在训练时，必须保证特殊 Token 不参与频率统计。
@@ -111,8 +115,8 @@ def train_bpe(
                     """
                     raw_counts[tuple(bytes([b]) for b in word.encode("utf-8"))] += 1
             i += 1
-
-    print('文件读取完毕')        
+    if is_print:
+        print('文件读取完毕')        
     # --- 构建高效数据结构以支持快速合并 ---
     # words_list: 存储每个单词的字节列表。使用 list 而不是 tuple，因为 BPE 合并会修改单词内部结构。
     # counts_list: 存储对应单词的频率。
@@ -250,8 +254,9 @@ def train_bpe(
         new_id = len(vocab)
         vocab[new_id] = pair[0] + pair[1]
 
-    print(f'vocab length: {len(vocab)}')
-    print(f'merge count: {len(merges)}')
+    if is_print:
+        print(f'vocab length: {len(vocab)}')
+        print(f'merge count: {len(merges)}')
         
     return vocab, merges
 

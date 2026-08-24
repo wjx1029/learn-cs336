@@ -6,13 +6,13 @@ import sys
 
 from cs336_basics.bpe_training import pretokenization_example
 
-# is_print = len(sys.argv) > 1 and sys.argv[1].lower() == 'true' 
+ 
 
 def train_bpe(
     input_path: str | os.PathLike,  # 输入语料文件的路径
     vocab_size: int,             # 目标词表大小（基础字节 + 合并 Token + 特殊 Token）
     special_tokens: list[str],   # 需要保留的特殊 Token 列表
-    is_print = false
+    is_print = False
 ) -> tuple[dict[int, bytes], list[tuple[bytes, bytes]]]:
     """
     训练字节级 BPE (Byte-Pair Encoding) 分词器。
@@ -282,8 +282,10 @@ def save_merges(merges, output_path):
 
 def main():
 
+    is_print_cli = len(sys.argv) > 2 and sys.argv[2].lower() == 'true'
+
     input_path = os.path.join('..', '..', 'data', 'TinyStoriesV2-GPT4-train.txt')   # 原始文本路径
-    vocab_size = 32000 # 作业要求的词表大小
+    vocab_size = int(sys.argv[1]) # 作业要求的词表大小
     
     special_tokens = ["<|endoftext|>"]
     output_dir = f"../data/TinyStoriesV2-GPT4/vs_{vocab_size}"
@@ -293,7 +295,7 @@ def main():
     print("这可能需要几分钟，具体取决于你的 CPU 速度和倒排索引的效率。")
     
     # 调用之前写好的逻辑
-    vocab, merges = train_bpe(input_path, vocab_size, special_tokens)
+    vocab, merges = train_bpe(input_path, vocab_size, special_tokens, is_print_cli)
     
     # 保存结果
     save_vocab(vocab, output_dir)

@@ -168,6 +168,7 @@ def scaled_dot_product_attention(Q: torch.Tensor,
         # tensor.masked_fill(mask, value)
         # mask: bool 张量，True 的位置会被填充
         # value: 填充的值
+        mask = mask.to(scores.device)
         scores = scores.masked_fill(~mask, float("-inf"))
 
     scores = softmax(scores, -1)

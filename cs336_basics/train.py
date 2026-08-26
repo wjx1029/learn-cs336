@@ -229,7 +229,7 @@ if __name__ == "__main__":
                     )
                     
                     val_loss_list.append(val_loss.item())
-                    perplexity_list.append(perplexity.item())
+                    perplexity_list.append(perplexity)
 
             avg_val_loss = sum(val_loss_list) / len(val_loss_list)
             avg_perplexity = sum(perplexity_list) / len(perplexity_list)

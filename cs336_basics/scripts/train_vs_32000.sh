@@ -3,11 +3,11 @@
 # cd ~/cs336/assignments/assignment1-basics/cs336_basics
 
 
-cd utils
+# cd utils
 
-uv run dataload.py 32000
+# uv run dataload.py 32000
 
-cd ..
+# cd ..
 
 uv run train.py \
         --experiment_name vs_32000 \

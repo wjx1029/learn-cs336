@@ -242,7 +242,6 @@ if __name__ == "__main__":
                 "train_loss": avg_train_loss,
                 "val_loss": avg_val_loss,
                 "perplexity": avg_perplexity,
-                "step": step,
             })
 
             # 只保存最好的模型

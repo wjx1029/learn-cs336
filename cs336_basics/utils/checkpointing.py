@@ -51,7 +51,24 @@ def load_checkpoint(
     
     checkpoint = torch.load(src, map_location=try_gpu())
 
-    model.load_state_dict(checkpoint['model'])
+    # 如果 checkpoint 是字典且包含 'state_dict' 键
+    if 'state_dict' in checkpoint:
+        state_dict = checkpoint['state_dict']
+    else:
+        state_dict = checkpoint
+    
+    # 去除所有键名中的 '_orig_mod.' 前缀
+    new_state_dict = OrderedDict()
+    for k, v in state_dict.items():
+        if k.startswith('_orig_mod.'):
+            new_key = k[10:]  # 去掉 '_orig_mod.'（长度为10）
+        else:
+            new_key = k
+        new_state_dict[new_key] = v
+    
+    # 用修改后的 state_dict 加载模型
+    model.load_state_dict(new_state_dict)
+
     if optimizer is not None:
         optimizer.load_state_dict(checkpoint['optimizer'])
 

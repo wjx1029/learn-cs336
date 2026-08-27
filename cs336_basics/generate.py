@@ -7,23 +7,24 @@ import torch
 
 device = try_gpu()
 
+vocab_size=10000
+
 model = TransformerModel(
-        vocab_size=10000,
+        vocab_size=vocab_size,
         context_length=256,
         num_layers=4,
         d_model=512,
         num_heads=16,
         rope_theta=1e4,
-        rms_eps=1e-5,
     ).to(device)
 
-load_checkpoint(src='checkpoints/model_best.ckpt',
+load_checkpoint(src='runs/base/best.pth',
                 model=model,
                 optimizer=None
                 )
 
-bpe_tokenizer = BPETokenizer.from_files(vocab_filepath='./data/TinyStoriesV2-GPT4/vocab.csv',
-                                        merges_filepath='./data/TinyStoriesV2-GPT4/merges.csv',
+bpe_tokenizer = BPETokenizer.from_files(vocab_filepath=f'./data/TinyStoriesV2-GPT4/vs_{vocab_size}/vocab.csv',
+                                        merges_filepath=f'./data/TinyStoriesV2-GPT4/vs_{vocab_size}/merges.csv',
                                         special_tokens=['<|endoftext|>']
                                         )
 
@@ -40,7 +41,7 @@ print(tokens)
 
 output = decode(model=model,
                 input_tokens=tokens,
-                max_length=128,
+                max_length=256,
                 )
 
 print(output)

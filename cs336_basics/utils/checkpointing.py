@@ -1,6 +1,7 @@
 import torch
 import os
 from typing import IO, Any, BinaryIO
+from collections import OrderedDict
 
 from cs336_basics.utils.device import try_gpu
 
@@ -51,11 +52,7 @@ def load_checkpoint(
     
     checkpoint = torch.load(src, map_location=try_gpu())
 
-    # 如果 checkpoint 是字典且包含 'state_dict' 键
-    if 'state_dict' in checkpoint:
-        state_dict = checkpoint['state_dict']
-    else:
-        state_dict = checkpoint
+    state_dict = checkpoint['model']
     
     # 去除所有键名中的 '_orig_mod.' 前缀
     new_state_dict = OrderedDict()

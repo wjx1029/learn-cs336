@@ -18,7 +18,7 @@ model = TransformerModel(
         rope_theta=1e4,
     ).to(device)
 
-load_checkpoint(src='runs/base/best.pth',
+load_checkpoint(src='runs/base_iter_10000/best.pth',
                 model=model,
                 optimizer=None
                 )
@@ -29,6 +29,7 @@ bpe_tokenizer = BPETokenizer.from_files(vocab_filepath=f'./data/TinyStoriesV2-GP
                                         )
 
 prompt = "Once upon a time"
+print(f"prompt:\n{prompt}")
 
 tokens = bpe_tokenizer.encode(prompt)
 tokens = torch.tensor(
@@ -37,15 +38,16 @@ tokens = torch.tensor(
     device=device
 ).unsqueeze(0)
 
-print(tokens)
+# print(tokens)
 
 output = decode(model=model,
                 input_tokens=tokens,
                 max_length=256,
                 )
 
-print(output)
+# print(output)
 
 output = bpe_tokenizer.decode(output.squeeze(0).tolist())
 
-print(output)
+print(f"model output:\n{output}")
+

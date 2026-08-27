@@ -1,17 +1,18 @@
 #!/bin/bash
 
 # cd ~/cs336/assignments/assignment1-basics/cs336_basics
+# Total tokens processed 40,960,000 ~ 327,680,000 
+# (your batch size × total step count × context length should equalroughly this value).
 
-# lr_max: 1e-4, 1e-3, 1e-2, 1e-1, 1
-# lr_min: 1e-5, 1e-4, 1e-3, 1e-2, 1e-1
+
 
 uv run train.py \
-        --experiment_name LR_small \
+        --experiment_name MS_N4_H16_D768 \
         --train_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/train/tokens.npy \
         --val_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/valid/tokens.npy \
         --vocab_size 10000 \
         \
-        --d_model 512 \
+        --d_model 768 \
         --num_layers 4 \
         --num_heads 16 \
         --context_len 256 \
@@ -24,8 +25,8 @@ uv run train.py \
         --opt_eps 1e-8 \
         --weight_decay 1e-2 \
         \
-        --lr_max 1e-4 \
-        --lr_min 1e-5 \
+        --lr_max 1e-3 \
+        --lr_min 1e-4 \
         --warm_up 500 \
         --cosine_end 5000 \
         \
@@ -40,14 +41,14 @@ uv run train.py \
 
 
 uv run train.py \
-        --experiment_name LR_large \
+        --experiment_name MS_N4_H12_D768 \
         --train_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/train/tokens.npy \
         --val_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/valid/tokens.npy \
         --vocab_size 10000 \
         \
-        --d_model 512 \
+        --d_model 768 \
         --num_layers 4 \
-        --num_heads 16 \
+        --num_heads 12 \
         --context_len 256 \
         --rope_theta 10000 \
         --rms_eps 1e-5 \
@@ -58,8 +59,8 @@ uv run train.py \
         --opt_eps 1e-8 \
         --weight_decay 1e-2 \
         \
-        --lr_max 1e-2 \
-        --lr_min 1e-3 \
+        --lr_max 1e-3 \
+        --lr_min 1e-4 \
         --warm_up 500 \
         --cosine_end 5000 \
         \
@@ -74,14 +75,14 @@ uv run train.py \
 
 
 uv run train.py \
-        --experiment_name LR_larger \
+        --experiment_name MS_N6_H8_D512 \
         --train_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/train/tokens.npy \
         --val_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/valid/tokens.npy \
         --vocab_size 10000 \
         \
         --d_model 512 \
-        --num_layers 4 \
-        --num_heads 16 \
+        --num_layers 6 \
+        --num_heads 8 \
         --context_len 256 \
         --rope_theta 10000 \
         --rms_eps 1e-5 \
@@ -92,8 +93,8 @@ uv run train.py \
         --opt_eps 1e-8 \
         --weight_decay 1e-2 \
         \
-        --lr_max 1e-1 \
-        --lr_min 1e-2 \
+        --lr_max 1e-3 \
+        --lr_min 1e-4 \
         --warm_up 500 \
         --cosine_end 5000 \
         \
@@ -108,13 +109,13 @@ uv run train.py \
 
 
 uv run train.py \
-        --experiment_name LR_x_large \
+        --experiment_name MS_N6_H16_D512 \
         --train_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/train/tokens.npy \
         --val_data data/TinyStoriesV2-GPT4/vs_10000/token_ids/valid/tokens.npy \
         --vocab_size 10000 \
         \
         --d_model 512 \
-        --num_layers 4 \
+        --num_layers 6 \
         --num_heads 16 \
         --context_len 256 \
         --rope_theta 10000 \
@@ -126,8 +127,8 @@ uv run train.py \
         --opt_eps 1e-8 \
         --weight_decay 1e-2 \
         \
-        --lr_max 1 \
-        --lr_min 1e-1 \
+        --lr_max 1e-3 \
+        --lr_min 1e-4 \
         --warm_up 500 \
         --cosine_end 5000 \
         \
@@ -138,4 +139,4 @@ uv run train.py \
         \
         --save_dir runs \
         --save_best_only \
-        --save_interval 1000
+        --save_interval 1000 

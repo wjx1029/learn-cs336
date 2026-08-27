@@ -2,7 +2,7 @@
 
 # cd ~/cs336/assignments/assignment1-basics/cs336_basics
 
-# batch size: 8, 16, 32, 128,
+# batch size: 8, 16, 32, 80
 # 学习率随 batch_size 线性改变
 
 uv run train.py \

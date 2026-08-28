@@ -64,6 +64,34 @@ class SwiGluFFN(nn.Module):
         return result
 
 
+class SiluFFN(nn.Module):
+
+    def __init__(self, d_model:int, d_ff:int=None, device=None, dtype=None):
+        """
+        
+        """
+        super().__init__()
+
+        self.d_model = d_model
+        if d_ff is None:
+            self.d_ff = d_model * 4        
+        else:
+            self.d_ff = d_ff
+
+        self.linear1 = Linear(d_model, self.d_ff, device, dtype)
+        self.linear2 = Linear(self.d_ff, d_model, device, dtype)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        
+        up = self.linear1(x)
+
+        up = up * torch.sigmoid(up)
+
+        result = self.linear2(up)
+
+        return result
+
+
 class RotaryPositionalEmbedding(nn.Module):
 
     def __init__(self, theta: float, d_k: int, max_seq_len: int, device=None):
@@ -250,7 +278,7 @@ class TransformerBlock(nn.Module):
 
         self.mha_layer = MultiHeadSelfAttention(d_model, num_heads, rope_embedding)
 
-        self.swiglu_layer = SwiGluFFN(d_model, d_ff)
+        self.silu_layer = SiluFFN(d_model, d_ff)
 
         self.rms_norm1 = RMSNorm(d_model, eps)
 
@@ -277,7 +305,7 @@ class TransformerBlock(nn.Module):
         mha_outputs_normed = self.rms_norm2(mha_outputs)
         
         # SwiGlu activate
-        activate_outputs = self.swiglu_layer(mha_outputs_normed)
+        activate_outputs = self.silu_layer(mha_outputs_normed)
         
         # 残差链接
         activate_outputs = activate_outputs + mha_outputs

@@ -257,32 +257,29 @@ class TransformerBlock(nn.Module):
         self.rms_norm2 = RMSNorm(d_model, eps)
 
     def forward(self, x: torch.Tensor, tokens_position: torch.Tensor=None):
-
-        # pre norm
-        x_normed = self.rms_norm1(x)
         
         # get multi head attention
         if self.rope_embedding is not None:
             if tokens_position is not None:
-                attention_outputs = self.mha_layer(x_normed, tokens_position)
+                attention_outputs = self.mha_layer(x, tokens_position)
             else:    
-                attention_outputs = self.mha_layer(x_normed, torch.arange(x.shape[-2], device=x.device))
+                attention_outputs = self.mha_layer(x, torch.arange(x.shape[-2], device=x.device))
         else:
-            attention_outputs = self.mha_layer(x_normed)
+            attention_outputs = self.mha_layer(x)
         
         # 残差链接
         mha_outputs = x + attention_outputs   
 
-        # pre norm
-        mha_outputs_normed = self.rms_norm2(mha_outputs)
+        # post norm
+        mha_outputs_normed = self.rms_norm1(mha_outputs)
         
         # SwiGlu activate
         activate_outputs = self.swiglu_layer(mha_outputs_normed)
         
         # 残差链接
-        activate_outputs = activate_outputs + mha_outputs
+        activate_outputs = activate_outputs + mha_outputs_normed
 
-        return activate_outputs
+        return self.rms_norm2(activate_outputs)
 
 
 class TransformerModel(nn.Module):

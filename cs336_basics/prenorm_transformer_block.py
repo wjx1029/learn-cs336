@@ -252,14 +252,14 @@ class TransformerBlock(nn.Module):
 
         self.swiglu_layer = SwiGluFFN(d_model, d_ff)
 
-        self.rms_norm1 = RMSNorm(d_model, eps)
+        # self.rms_norm1 = RMSNorm(d_model, eps)
 
-        self.rms_norm2 = RMSNorm(d_model, eps)
+        # self.rms_norm2 = RMSNorm(d_model, eps)
 
     def forward(self, x: torch.Tensor, tokens_position: torch.Tensor=None):
 
         # pre norm
-        x_normed = self.rms_norm1(x)
+        x_normed = x
         
         # get multi head attention
         if self.rope_embedding is not None:
@@ -274,7 +274,7 @@ class TransformerBlock(nn.Module):
         mha_outputs = x + attention_outputs   
 
         # pre norm
-        mha_outputs_normed = self.rms_norm2(mha_outputs)
+        mha_outputs_normed = mha_outputs
         
         # SwiGlu activate
         activate_outputs = self.swiglu_layer(mha_outputs_normed)
@@ -322,7 +322,7 @@ class TransformerModel(nn.Module):
             ]
         )
         
-        self.rms_norm = RMSNorm(d_model=d_model, eps=rms_eps)
+        # self.rms_norm = RMSNorm(d_model=d_model, eps=rms_eps)
 
         self.output_linear = Linear(d_model, vocab_size)
 
@@ -334,7 +334,7 @@ class TransformerModel(nn.Module):
             
             x = self.transformer_layers[i](x, tokens_position)
 
-        x = self.rms_norm(x)
+        # x = self.rms_norm(x)
 
         x = self.output_linear(x)
 

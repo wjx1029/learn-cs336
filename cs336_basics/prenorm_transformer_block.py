@@ -248,7 +248,7 @@ class TransformerBlock(nn.Module):
 
         self.rope_embedding = rope_embedding
 
-        self.mha_layer = MultiHeadSelfAttention(d_model, num_heads, rope_embedding)
+        self.mha_layer = MultiHeadSelfAttention(d_model, num_heads)
 
         self.swiglu_layer = SwiGluFFN(d_model, d_ff)
 
